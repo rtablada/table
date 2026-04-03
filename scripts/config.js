@@ -20,6 +20,10 @@ export const packages = [
     name: '@tanstack/angular-table',
     packageDir: 'packages/angular-table',
   },
+  {
+    name: '@tanstack/ember-table',
+    packageDir: 'packages/ember-table',
+  },
   // {
   //   name: '@tanstack/lit-table',
   //   packageDir: 'packages/lit-table',

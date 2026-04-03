@@ -1,5 +1,6 @@
 export default [
   './packages/angular-table/vite.config.ts',
+  './packages/ember-table/vite.config.ts',
   './packages/lit-table/vite.config.ts',
   './packages/match-sorter-utils/vite.config.ts',
   './packages/react-table/vite.config.ts',
