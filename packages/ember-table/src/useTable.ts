@@ -110,8 +110,11 @@ export function useTable<
           table = undefined;
         });
       } else {
-        table.setOptions((prev: TableOptions<TFeatures, TData>) => ({
-          ...prev,
+        // Update options directly on the optionsStore to avoid
+        // table-core firing onChange callbacks during setOptions,
+        // which would reset controlled state.
+        table.optionsStore.setState(() => ({
+          ...table.options,
           ...options,
         }));
       }

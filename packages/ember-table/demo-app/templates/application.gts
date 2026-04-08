@@ -63,21 +63,8 @@ class KitchenSink extends Component {
       columnVisibility: this.columnVisibility,
       globalFilter: this.globalFilter,
     }),
-    onSortingChange: () => (updater: any) => {
-      this.sorting = typeof updater === 'function' ? updater(this.sorting) : updater;
-    },
-    onPaginationChange: () => (updater: any) => {
-      this.pagination = typeof updater === 'function' ? updater(this.pagination) : updater;
-    },
-    onRowSelectionChange: () => (updater: any) => {
-      this.rowSelection = typeof updater === 'function' ? updater(this.rowSelection) : updater;
-    },
-    onColumnVisibilityChange: () => (updater: any) => {
-      this.columnVisibility = typeof updater === 'function' ? updater(this.columnVisibility) : updater;
-    },
-    onGlobalFilterChange: () => (updater: any) => {
-      this.globalFilter = typeof updater === 'function' ? updater(this.globalFilter) : updater;
-    },
+    // Callbacks not needed — state is managed directly via @tracked
+    // properties and passed through the state thunk above.
     enableRowSelection: () => true,
     getRowId: () => ((row: Person) => row.id),
     globalFilterFn: () => 'includesString' as any,
@@ -102,12 +89,12 @@ class KitchenSink extends Component {
   get rows() {
     return this.table.getRowModel().rows.map((row: any) => ({
       id: row.id,
-      isSelected: row.getIsSelected(),
+      isSelected: !!this.rowSelection[row.id],
       cells: row.getVisibleCells().map((cell: any) => ({
         id: cell.id,
         value: cell.getValue(),
       })),
-      toggleSelected: () => row.toggleSelected(),
+      toggleSelected: () => this.toggleRowSelected(row.id),
     }));
   }
 
@@ -150,32 +137,60 @@ class KitchenSink extends Component {
     this.globalFilter = (e.target as HTMLInputElement).value;
   };
 
-  goFirstPage = () => this.table.setPageIndex(0);
-  goPrevPage = () => this.table.previousPage();
-  goNextPage = () => this.table.nextPage();
-  goLastPage = () => this.table.setPageIndex(this.pageCount - 1);
+  goFirstPage = () => {
+    this.pagination = { ...this.pagination, pageIndex: 0 };
+  };
+  goPrevPage = () => {
+    this.pagination = { ...this.pagination, pageIndex: Math.max(0, this.pagination.pageIndex - 1) };
+  };
+  goNextPage = () => {
+    this.pagination = { ...this.pagination, pageIndex: Math.min(this.pageCount - 1, this.pagination.pageIndex + 1) };
+  };
+  goLastPage = () => {
+    this.pagination = { ...this.pagination, pageIndex: this.pageCount - 1 };
+  };
 
   setPageSize = (e: Event) => {
-    this.table.setPageSize(Number((e.target as HTMLSelectElement).value));
+    this.pagination = { ...this.pagination, pageSize: Number((e.target as HTMLSelectElement).value), pageIndex: 0 };
   };
 
   toggleAllRows = () => {
-    this.table.toggleAllRowsSelected();
+    const allSelected = this.table.getIsAllRowsSelected();
+    if (allSelected) {
+      this.rowSelection = {};
+    } else {
+      const newSel: Record<string, boolean> = {};
+      this.table.getCoreRowModel().rows.forEach((row: any) => { newSel[row.id] = true; });
+      this.rowSelection = newSel;
+    }
   };
 
   toggleColumnVisibility = (columnId: string) => {
-    const col = this.table.getColumn(columnId);
-    if (col) col.toggleVisibility();
+    this.columnVisibility = {
+      ...this.columnVisibility,
+      [columnId]: this.columnVisibility[columnId] === false ? true : !(this.columnVisibility[columnId] ?? true),
+    };
   };
 
   toggleSort = (columnId: string) => {
-    const col = this.table.getColumn(columnId);
-    if (col) col.toggleSorting();
+    const existing = this.sorting.find((s: any) => s.id === columnId);
+    if (!existing) {
+      this.sorting = [{ id: columnId, desc: false }];
+    } else if (!existing.desc) {
+      this.sorting = [{ id: columnId, desc: true }];
+    } else {
+      this.sorting = [];
+    }
   };
 
   toggleRowSelected = (rowId: string) => {
-    const row = this.table.getRow(rowId);
-    if (row) row.toggleSelected();
+    const newSel = { ...this.rowSelection };
+    if (newSel[rowId]) {
+      delete newSel[rowId];
+    } else {
+      newSel[rowId] = true;
+    }
+    this.rowSelection = newSel;
   };
 
   <template>
